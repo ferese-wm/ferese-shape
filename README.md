@@ -55,6 +55,16 @@ radius does not give the same contour. A sufficiently deep inset can disappear.
 and its accumulated inset, then translates it. For pixel coverage, transform the
 outline and query points to physical pixels before calling `edge_coverage`.
 
+## GPU geometry
+
+`WGSL` exports `shape_distance(point, bounds, radii, kind, inset)` and
+`shape_coverage(distance)`. Kind `0` selects circular corners; `1` selects the
+squircle profile. Coordinates use the same units as the CPU outline. Use physical
+pixels when evaluating edge coverage.
+
+The build script generates the shader's control points from the CPU constants.
+Each backend supplies its own transforms, colors, batching and clipping.
+
 ## Checks and remaining work
 
 ```sh
@@ -69,8 +79,8 @@ The distance checks allow 0.01 units of error for the tested fixtures; edge
 coverage allows two steps out of 255. These are test tolerances, not a proven
 error bound for arbitrary geometry.
 
-This repository currently contains the CPU geometry and its tests. GPU shader
-agreement, renderer integration, offset paths and shaped clipping remain part of
+This repository contains CPU geometry, generated WGSL and geometry tests.
+Renderer integration, offset paths and shaped clipping remain part of
 the ongoing [Ferese corner work](https://github.com/ferese-wm/ferese/issues/6).
 
 Licensed under MIT.

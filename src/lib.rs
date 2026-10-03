@@ -1,9 +1,11 @@
 #![doc = include_str!("../README.md")]
 
-pub type Point = [f64; 2];
-pub type Cubic = [Point; 4];
+mod profile;
 
-pub const EXTENT: f64 = 1.528_664_98;
+pub use profile::{CIRCULAR_BLEND, CONTINUOUS, Cubic, EXTENT, Point};
+
+/// WGSL distance and coverage functions, with controls generated from the CPU profile.
+pub const WGSL: &str = include_str!(concat!(env!("OUT_DIR"), "/shape.wgsl"));
 
 /// Shape is independent of the numerical corner radii.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -13,48 +15,6 @@ pub enum Shape {
     Circular = 0,
     Continuous = 1,
 }
-
-pub const CONTINUOUS: [Cubic; 3] = [
-    [
-        [0., EXTENT],
-        [0., 1.088_492_96],
-        [0., 0.868_406_94],
-        [0.074_911_39, 0.631_493_79],
-    ],
-    [
-        [0.074_911_39, 0.631_493_79],
-        [0.169_059_56, 0.372_823_83],
-        [0.372_823_83, 0.169_059_56],
-        [0.631_493_79, 0.074_911_39],
-    ],
-    [
-        [0.631_493_79, 0.074_911_39],
-        [0.868_406_94, 0.],
-        [1.088_492_96, 0.],
-        [EXTENT, 0.],
-    ],
-];
-
-pub const CIRCULAR_BLEND: [Cubic; 3] = [
-    [
-        [0., 1.],
-        [0., 0.868_678_128_9],
-        [0.025_865_763_1, 0.738_642_156_6],
-        [0.076_120_467_5, 0.617_316_567_6],
-    ],
-    [
-        [0.076_120_467_5, 0.617_316_567_6],
-        [0.177_614_424_1, 0.372_288_481_0],
-        [0.372_288_481_0, 0.177_614_424_1],
-        [0.617_316_567_6, 0.076_120_467_5],
-    ],
-    [
-        [0.617_316_567_6, 0.076_120_467_5],
-        [0.738_642_156_6, 0.025_865_763_1],
-        [0.868_678_128_9, 0.],
-        [1., 0.],
-    ],
-];
 
 /// An inset retains its original outline instead of rebuilding a smaller curve.
 #[derive(Clone, Copy, Debug, PartialEq)]
