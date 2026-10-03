@@ -32,7 +32,11 @@ fn shape_nearest(c: mat4x2<f32>, p: vec2<f32>) -> f32 {
             let error = sample.point - p;
             let speed = dot(sample.tangent, sample.tangent);
             let denominator = max(speed + dot(error, sample.acceleration), speed * 0.25);
-            t = clamp(t - clamp(dot(error, sample.tangent) / denominator, -0.25, 0.25), 0.0, 1.0);
+            let next = clamp(t - clamp(dot(error, sample.tangent) / denominator, -0.25, 0.25), 0.0, 1.0);
+            if next == t {
+                break;
+            }
+            t = next;
         }
 
         distance = min(distance, length(shape_sample(c, t).point - p));
@@ -47,6 +51,15 @@ fn shape_contains(p: vec2<f32>, blend: f32) -> bool {
 
         if p.x > c[3].x {
             continue;
+        }
+
+        // The blended profiles are monotone; endpoint bounds settle most
+        // containment queries without the inverse-curve search.
+        if p.y >= c[0].y {
+            return true;
+        }
+        if p.y < c[3].y {
+            return false;
         }
 
         var low = 0.0;
@@ -147,9 +160,19 @@ fn shape_distance(point: vec2<f32>, bounds: vec4<f32>, radii: vec4<f32>, kind: u
                 candidate = min(length(q - vec2(0.0, radius)), length(q - vec2(radius, 0.0)));
             }
         } else {
-            for (var segment = 0u; segment < 3u; segment++) {
-                candidate = min(candidate, shape_nearest(shape_controls(segment, blends[corner]), q / radius) * radius);
+            // Fold the symmetric corner and omit the opposite shoulder.
+            let normalized = vec2(min(q.x, q.y), max(q.x, q.y)) / radius;
+            var nearest = distance / radius;
+            for (var segment = 0u; segment < 2u; segment++) {
+                let c = shape_controls(segment, blends[corner]);
+                let low = min(min(c[0], c[1]), min(c[2], c[3]));
+                let high = max(max(c[0], c[1]), max(c[2], c[3]));
+                let delta = max(max(low - normalized, normalized - high), vec2(0.0));
+                if dot(delta, delta) < nearest * nearest {
+                    nearest = min(nearest, shape_nearest(c, normalized));
+                }
             }
+            candidate = nearest * radius;
         }
 
         distance = min(distance, candidate);

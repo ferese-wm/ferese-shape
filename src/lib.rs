@@ -166,11 +166,7 @@ impl Outline {
                 }
             } else {
                 let q = [query[0] / radius, query[1] / radius];
-                controls(blend(radius, limit))
-                    .into_iter()
-                    .map(|c| nearest_distance(c, q))
-                    .fold(f64::INFINITY, f64::min)
-                    * radius
+                corner_distance(q, blend(radius, limit), distance / radius) * radius
             };
             distance = distance.min(candidate);
         }
@@ -259,6 +255,35 @@ fn sample(c: Cubic, t: f64) -> (Point, Point, Point) {
     )
 }
 
+fn corner_distance(p: Point, blend: f64, mut nearest: f64) -> f64 {
+    // Reflection across the diagonal preserves this profile. For x <= y,
+    // the reflected shoulder is at least as close as the opposite shoulder.
+    let p = [p[0].min(p[1]), p[0].max(p[1])];
+    for c in controls(blend).into_iter().take(2) {
+        // A Bezier lies in its control hull. The hull's bounding box gives
+        // a lower bound without solving the curve.
+        if control_box_distance_squared(c, p) < nearest * nearest {
+            nearest = nearest.min(nearest_distance(c, p));
+        }
+    }
+    nearest
+}
+
+fn control_box_distance_squared(c: Cubic, p: Point) -> f64 {
+    let low: Point =
+        std::array::from_fn(|axis| c.into_iter().map(|p| p[axis]).fold(f64::INFINITY, f64::min));
+    let high: Point = std::array::from_fn(|axis| {
+        c.into_iter()
+            .map(|p| p[axis])
+            .fold(f64::NEG_INFINITY, f64::max)
+    });
+    let delta = [
+        (low[0] - p[0]).max(p[0] - high[0]).max(0.),
+        (low[1] - p[1]).max(p[1] - high[1]).max(0.),
+    ];
+    dot(delta, delta)
+}
+
 fn nearest_distance(c: Cubic, p: Point) -> f64 {
     [0., 1.]
         .into_iter()
@@ -268,7 +293,12 @@ fn nearest_distance(c: Cubic, p: Point) -> f64 {
                 let error = sub(point, p);
                 let speed = dot(tangent, tangent);
                 let denominator = (speed + dot(error, acceleration)).max(speed * 0.25);
-                t = (t - (dot(error, tangent) / denominator).clamp(-0.25, 0.25)).clamp(0., 1.);
+                let next =
+                    (t - (dot(error, tangent) / denominator).clamp(-0.25, 0.25)).clamp(0., 1.);
+                if next == t {
+                    break;
+                }
+                t = next;
             }
 
             length(sub(sample(c, t).0, p))
@@ -280,6 +310,15 @@ fn corner_contains(p: Point, blend: f64) -> bool {
     for c in controls(blend) {
         if p[0] > c[3][0] {
             continue;
+        }
+
+        // Both blended profiles are monotone in x and y. Queries above
+        // or below this segment's endpoint box need no inversion.
+        if p[1] >= c[0][1] {
+            return true;
+        }
+        if p[1] < c[3][1] {
+            return false;
         }
 
         let (mut low, mut high) = (0., 1.);
@@ -298,4 +337,63 @@ fn corner_contains(p: Point, blend: f64) -> bool {
     }
 
     true
+}
+
+#[cfg(test)]
+mod optimization_tests {
+    use super::*;
+
+    #[test]
+    fn pruned_search_matches_all_segments_including_deep_interiors() {
+        for blend in [0., 0.01, 0.25, 0.5, 0.75, 0.99, 1.] {
+            let curves = controls(blend);
+            for y in -40..81 {
+                for x in -40..81 {
+                    let p = [x as f64 / 20., y as f64 / 20.];
+                    let reference = curves
+                        .into_iter()
+                        .map(|c| nearest_distance(c, p))
+                        .fold(f64::INFINITY, f64::min);
+                    for bound in [f64::INFINITY, 0.1, 0.75, 2.] {
+                        let actual = corner_distance(p, blend, bound);
+                        assert!(
+                            (actual - reference.min(bound)).abs() < 1e-12,
+                            "blend={blend} p={p:?} bound={bound}: {actual} vs {reference}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn endpoint_containment_shortcuts_match_inverse_search() {
+        for blend in [0., 0.25, 0.5, 0.75, 1.] {
+            for y in 0..81 {
+                for x in 0..81 {
+                    let p = [x as f64 / 50., y as f64 / 50.];
+                    let reference = controls(blend)
+                        .into_iter()
+                        .find(|c| p[0] <= c[3][0])
+                        .map_or(true, |c| {
+                            let (mut low, mut high) = (0., 1.);
+                            for _ in 0..32 {
+                                let t = (low + high) * 0.5;
+                                if sample(c, t).0[0] < p[0] {
+                                    low = t;
+                                } else {
+                                    high = t;
+                                }
+                            }
+                            p[1] >= sample(c, (low + high) * 0.5).0[1]
+                        });
+                    assert_eq!(
+                        corner_contains(p, blend),
+                        reference,
+                        "blend={blend} p={p:?}"
+                    );
+                }
+            }
+        }
+    }
 }
