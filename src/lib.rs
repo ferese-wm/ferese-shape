@@ -1,5 +1,6 @@
 #![doc = include_str!("../README.md")]
 
+mod path;
 mod profile;
 
 pub use profile::{CIRCULAR_BLEND, CONTINUOUS, Cubic, EXTENT, Point};

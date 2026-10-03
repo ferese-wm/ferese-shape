@@ -333,3 +333,29 @@ fn measured_profile_preserves_its_documented_join_limits() {
         assert!((curvature(before, a0) - curvature(after, a1)).abs() > 0.35);
     }
 }
+
+#[test]
+fn offset_polygons_match_the_independent_curve_reference() {
+    for shape in [Shape::Circular, Shape::Continuous] {
+        for radii in [[0.0; 4], [20.0; 4], [0.0, 28.0, 7.0, 19.0]] {
+            for scale in [1.0, 1.25, 1.5] {
+                let bounds = [1.25 * scale, 2.5 * scale, 100.0 * scale, 80.0 * scale];
+                let radii = radii.map(|radius| radius * scale);
+                let oracle = polygon(bounds, radii, shape);
+                let outline = Outline::new(bounds, radii, shape).unwrap();
+
+                for inset in [-3.0 * scale, 0.75 * scale, 12.0 * scale] {
+                    let points = outline.inset(inset).unwrap().polygon(0.25).unwrap();
+
+                    for (a, b) in points.iter().zip(points.iter().cycle().skip(1)) {
+                        for step in 0..=10 {
+                            let t = step as f64 / 10.0;
+                            let point = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+                            assert!((reference(point, &oracle) + inset).abs() <= 0.25);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

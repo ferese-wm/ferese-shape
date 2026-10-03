@@ -55,6 +55,18 @@ radius does not give the same contour. A sufficiently deep inset can disappear.
 and its accumulated inset, then translates it. For pixel coverage, transform the
 outline and query points to physical pixels before calling `edge_coverage`.
 
+`polygon(tolerance)` samples the reference contour, including its inset, as a
+closed polygon. It returns an empty polygon for a collapsed contour. Invalid
+tolerances or exhausted subdivision budgets return `None`. For a tolerance of
+0.25 physical pixels, either transform the outline to physical pixels first or
+divide the tolerance by the output scale.
+
+The path tests measure chord deviation against the distance field and an
+independent curve reference. Tested paths stay within 0.25 physical pixels,
+including fractional scales and inward and outward offsets. The adaptive
+sampler checks several points on each chord; it does not prove an error bound
+for arbitrary geometry.
+
 ## GPU geometry
 
 `WGSL` exports `shape_distance(point, bounds, radii, kind, inset)` and
@@ -80,7 +92,7 @@ coverage allows two steps out of 255. These are test tolerances, not a proven
 error bound for arbitrary geometry.
 
 This repository contains CPU geometry, generated WGSL and geometry tests.
-Renderer integration, offset paths and shaped clipping remain part of
+Renderer integration and shaped clipping remain part of
 the ongoing [Ferese corner work](https://github.com/ferese-wm/ferese/issues/6).
 
 Licensed under MIT.
