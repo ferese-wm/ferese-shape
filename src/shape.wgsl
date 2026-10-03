@@ -100,6 +100,12 @@ fn shape_distance(point: vec2<f32>, bounds: vec4<f32>, radii: vec4<f32>, kind: u
         extents = r * (1.0 + (SHAPE_EXTENT - 1.0) * blends);
     }
 
+    let edge_inset = size * 0.5 - abs(p - size * 0.5);
+
+    if max(edge_inset.x, edge_inset.y) >= max(max(extents.x, extents.y), max(extents.z, extents.w)) {
+        return -min(edge_inset.x, edge_inset.y) + inset;
+    }
+
     var distance = shape_line_distance(p, vec2(extents.x, 0.0), vec2(size.x - extents.y, 0.0));
     distance = min(distance, shape_line_distance(p, vec2(size.x, extents.y), vec2(size.x, size.y - extents.z)));
     distance = min(distance, shape_line_distance(p, vec2(size.x - extents.z, size.y), vec2(extents.w, size.y)));

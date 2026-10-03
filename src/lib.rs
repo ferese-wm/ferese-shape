@@ -90,7 +90,29 @@ impl Outline {
         let p = [point[0] - self.bounds[0], point[1] - self.bounds[1]];
         let [_, _, width, height] = self.bounds;
         let limit = width.min(height) * 0.5;
+        let radius = self.radii[0];
+
+        if self.radii.iter().all(|r| *r == radius)
+            && (self.shape == Shape::Circular || radius == 0. || radius >= limit)
+        {
+            let q = [
+                (p[0] - width * 0.5).abs() - width * 0.5 + radius,
+                (p[1] - height * 0.5).abs() - height * 0.5 + radius,
+            ];
+            return q[0].max(0.).hypot(q[1].max(0.)) + q[0].max(q[1]).min(0.) - radius + self.inset;
+        }
+
         let extents = self.radii.map(|r| corner_extent(r, limit, self.shape));
+        let edge_inset = [
+            width * 0.5 - (p[0] - width * 0.5).abs(),
+            height * 0.5 - (p[1] - height * 0.5).abs(),
+        ];
+
+        // Outside every corner box, the nearest contour is a straight edge.
+        if edge_inset[0].max(edge_inset[1]) >= extents.into_iter().fold(0., f64::max) {
+            return -edge_inset[0].min(edge_inset[1]) + self.inset;
+        }
+
         let lines = [
             [[extents[0], 0.], [width - extents[1], 0.]],
             [[width, extents[1]], [width, height - extents[2]]],
