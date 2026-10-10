@@ -1,22 +1,23 @@
 # ferese-shape
 
-`ferese-shape` is a Rust library for rounded rectangles and squircles.
-
-`Shape::Circular` gives rounded rectangles, circles and pills.
-`Shape::Continuous` uses a measured three-cubic squircle profile. Shape
-and radius are separate choices; zero radius gives a square corner in either mode.
+`ferese-shape` is a Rust library for rounded rectangles and squircles. Choose
+`Shape::Circular` for rounded rectangles, circles and pills, or
+`Shape::Continuous` for a measured three-cubic squircle profile. The radius is
+independent of that choice, so setting it to zero gives a square corner in
+either mode.
 
 ## Use
 
-Requires Rust 1.85 or newer. Add the crate to your `Cargo.toml`:
+To use the crate, you'll need Rust 1.85 or newer and this dependency in your
+`Cargo.toml`:
 
 ```toml
 [dependencies]
 ferese-shape = "0.1.0"
 ```
 
-The [API reference](https://docs.rs/ferese-shape) documents the public types and
-functions. This example calculates fill and border coverage:
+The example below calculates fill and border coverage; the
+[API reference](https://docs.rs/ferese-shape) covers the public types and functions.
 
 ```rust
 use ferese_shape::{Outline, Shape, edge_coverage};
@@ -37,49 +38,55 @@ assert!(border >= 0.0);
 
 ## Geometry
 
-Bounds, radii, query points and inset distances use the caller's units. Calculations
-use `f64`. Bounds and radii must be finite, and width and height must be positive.
-Negative radii become zero; each radius is capped at half the shorter dimension.
-Query points must be finite.
+Bounds, radii, query points and inset distances use the caller's units, with
+calculations performed in `f64`. Bounds, radii and query points must be finite,
+and width and height must be positive. Negative radii become zero, and each
+radius is capped at half the shorter dimension.
 
-The squircle shoulder extends up to `1.52866498 × radius`. As shoulders approach
-half the shorter dimension, the profile blends toward circular corners to avoid
-overlap. At the maximum radius, circles and pills use exact arcs.
+Because a squircle's shoulder can extend up to `1.52866498 × radius`, the profile
+blends toward circular corners as the shoulders approach half the shorter
+dimension. This keeps the shoulders from overlapping, with exact arcs for
+circles and pills at the maximum radius.
 
-The squircle control points follow this
+The squircle control points come from this
 [measured UIKit approximation](https://liamrosenfeld.com/posts/apple_icon_quest/).
-They meet at the same positions, but the internal joins have about a 2.45° tangent
-jump and a curvature jump. `Continuous` names the profile; it does not promise
-mathematical tangent or curvature continuity.
+Adjacent segments meet at the same point but have about a 2.45° tangent jump and
+a curvature jump, so the name `Continuous` does not imply mathematical tangent
+or curvature continuity.
 
 ## Insets
 
-`Outline::inset(distance)` keeps the original bounds, radii and profile. It adds
-the distance to the signed distance from that reference outline. Positive values
-move inward; negative values move outward. Repeated insets accumulate.
+Calling `Outline::inset(distance)` changes the contour without rebuilding the
+shape. The original bounds, radii and profile stay intact as the method adds the
+distance to their signed-distance field. Positive values pull the edge inward,
+negative values push it outward, and repeated calls add to the stored offset.
 
-A border of width `w` uses the outer coverage minus the coverage at `d + w`, where
-`d` is the outer signed distance. Rebuilding a smaller squircle with a smaller
-radius does not give the same contour. A sufficiently deep inset can disappear.
+For a border of width `w`, subtract the coverage at `d + w` from the outer
+coverage, where `d` is the outer signed distance. The inset follows that original
+distance field, which is why rebuilding a smaller squircle with a smaller radius
+does not give the same contour. A sufficiently deep inset can disappear entirely.
 
-`transformed(translation, scale)` applies a positive uniform scale to the outline
-and its accumulated inset, then translates it. For pixel coverage, transform the
-outline and query points to physical pixels before calling `edge_coverage`.
+`transformed(translation, scale)` scales the original outline and its accumulated
+inset by a positive uniform factor, then translates the result. When using
+`edge_coverage`, work in physical pixels by transforming both the outline and
+your query points into those units.
 
-`polygon(tolerance)` samples the reference contour, including its inset, as a
-closed polygon. It returns an empty polygon for a collapsed contour. Invalid
-tolerances or exhausted subdivision budgets return `None`. For a tolerance of
-0.25 physical pixels, either transform the outline to physical pixels first or
-divide the tolerance by the output scale.
+`polygon(tolerance)` samples the reference contour, including any inset, into a
+closed polygon with the tolerance expressed in the outline's units. For a
+tolerance of 0.25 physical pixels, either transform the outline to physical
+pixels first or divide the tolerance by the output scale. A collapsed contour
+produces an empty polygon, while an invalid tolerance or an exhausted
+subdivision budget produces `None`.
 
 ## GPU geometry
 
 `WGSL` exports `shape_distance(point, bounds, radii, kind, inset)` and
-`shape_coverage(distance)`. Kind `0` selects circular corners; `1` selects the
-squircle profile. Coordinates use the same units as the CPU outline. Use physical
-pixels when evaluating edge coverage.
+`shape_coverage(distance)` for evaluating the outlines on the GPU. Set `kind` to
+`0` for circular corners or `1` for the squircle profile.
 
-The shader uses the same control points as the CPU geometry. Your renderer
-supplies transforms, colors, batching, and clipping.
+The shader shares its control points and coordinate units with the CPU geometry;
+your renderer handles the transforms, colors, batching and clipping around these
+functions. Edge coverage expects distances in physical pixels on both the CPU
+and GPU.
 
 [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
