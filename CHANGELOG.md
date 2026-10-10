@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+This release corrects the README and crate description.
+
 ## 0.1.0
 
 Initial release.

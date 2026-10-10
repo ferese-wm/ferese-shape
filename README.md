@@ -13,7 +13,7 @@ To use the crate, you'll need Rust 1.85 or newer and this dependency in your
 
 ```toml
 [dependencies]
-ferese-shape = "0.1.0"
+ferese-shape = "0.1.1"
 ```
 
 The example below calculates fill and border coverage; the

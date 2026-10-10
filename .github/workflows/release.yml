@@ -6,7 +6,7 @@ on:
       tag:
         description: Existing release tag matching Cargo.toml
         required: true
-        default: v0.1.0
+        default: v0.1.1
         type: string
       publish:
         description: Publish to crates.io and GitHub
