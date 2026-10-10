@@ -1,8 +1,6 @@
 # ferese-shape
 
-`ferese-shape` computes rounded rectangle and squircle outlines for 2D rendering.
-It provides signed-distance queries, border insets, polygon paths, and WGSL
-functions for GPU rendering.
+`ferese-shape` is a Rust library for rounded rectangles and squircles.
 
 `Shape::Circular` gives rounded rectangles, circles and pills.
 `Shape::Continuous` uses a measured three-cubic squircle profile. Shape
