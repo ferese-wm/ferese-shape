@@ -7,6 +7,18 @@ Rendering stays in each backend.
 `Shape::Continuous` uses Ferese's measured three-cubic squircle profile. Shape
 and radius are separate choices; zero radius gives a square corner in either mode.
 
+## Use
+
+Requires Rust 1.85 or newer. Add the crate to your `Cargo.toml`:
+
+```toml
+[dependencies]
+ferese-shape = "0.1.0"
+```
+
+The [API reference](https://docs.rs/ferese-shape) documents the public types and
+functions. This example calculates fill and border coverage:
+
 ```rust
 use ferese_shape::{Outline, Shape, edge_coverage};
 
@@ -77,11 +89,13 @@ pixels when evaluating edge coverage.
 The build script generates the shader's control points from the CPU constants.
 Each backend supplies its own transforms, colors, batching and clipping.
 
-## Checks and remaining work
+## Checks
 
 ```sh
+cargo fmt --check
 cargo test --release
 cargo clippy --all-targets -- -D warnings
+cargo publish --dry-run
 ```
 
 Tests compare distances and edge coverage with an independent sampled-polygon
@@ -91,8 +105,7 @@ The distance checks allow 0.01 units of error for the tested fixtures; edge
 coverage allows two steps out of 255. These are test tolerances, not a proven
 error bound for arbitrary geometry.
 
-This repository contains CPU geometry, generated WGSL and geometry tests.
-Renderer integration and shaped clipping remain part of
-the ongoing [Ferese corner work](https://github.com/ferese-wm/ferese/issues/6).
+See the [changelog](CHANGELOG.md) for version `0.1.0` and the
+[release instructions](RELEASING.md) for publishing the crate with tag `v0.1.0`.
 
 Licensed under MIT.

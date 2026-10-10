@@ -6,8 +6,12 @@ rust-version = "1.85"
 license = "MIT"
 description = "Corner outlines and distance-based insets shared by Ferese and Iced"
 repository = "https://github.com/ferese-wm/ferese-shape"
+homepage = "https://github.com/ferese-wm/ferese-shape"
+documentation = "https://docs.rs/ferese-shape"
 readme = "README.md"
 keywords = ["geometry", "corners", "squircle", "graphics"]
 categories = ["graphics", "mathematics"]
+publish = ["crates-io"]
+include = ["Cargo.toml", "Cargo.lock", "README.md", "CHANGELOG.md", "RELEASING.md", "LICENSE", "build.rs", "src/**", "tests/**"]
 
 [workspace]

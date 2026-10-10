@@ -375,7 +375,7 @@ mod optimization_tests {
                     let reference = controls(blend)
                         .into_iter()
                         .find(|c| p[0] <= c[3][0])
-                        .map_or(true, |c| {
+                        .is_none_or(|c| {
                             let (mut low, mut high) = (0., 1.);
                             for _ in 0..32 {
                                 let t = (low + high) * 0.5;
