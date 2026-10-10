@@ -89,4 +89,4 @@ your renderer handles the transforms, colors, batching and clipping around these
 functions. Edge coverage expects distances in physical pixels on both the CPU
 and GPU.
 
-[Changelog](CHANGELOG.md) · [MIT license](LICENSE)
+[MIT license](LICENSE)
