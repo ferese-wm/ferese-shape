@@ -1,10 +1,11 @@
 # ferese-shape
 
-Corner geometry for Ferese and its Iced fork. The crate has no dependencies.
-Rendering stays in each backend.
+`ferese-shape` computes rounded rectangle and squircle outlines for 2D rendering.
+It provides signed-distance queries, border insets, polygon paths, and WGSL
+functions for GPU rendering.
 
 `Shape::Circular` gives rounded rectangles, circles and pills.
-`Shape::Continuous` uses Ferese's measured three-cubic squircle profile. Shape
+`Shape::Continuous` uses a measured three-cubic squircle profile. Shape
 and radius are separate choices; zero radius gives a square corner in either mode.
 
 ## Use
@@ -47,7 +48,7 @@ The squircle shoulder extends up to `1.52866498 × radius`. As shoulders approac
 half the shorter dimension, the profile blends toward circular corners to avoid
 overlap. At the maximum radius, circles and pills use exact arcs.
 
-The control points match Ferese's existing window profile, based on this
+The squircle control points follow this
 [measured UIKit approximation](https://liamrosenfeld.com/posts/apple_icon_quest/).
 They meet at the same positions, but the internal joins have about a 2.45° tangent
 jump and a curvature jump. `Continuous` names the profile; it does not promise
@@ -73,12 +74,6 @@ tolerances or exhausted subdivision budgets return `None`. For a tolerance of
 0.25 physical pixels, either transform the outline to physical pixels first or
 divide the tolerance by the output scale.
 
-The path tests measure chord deviation against the distance field and an
-independent curve reference. Tested paths stay within 0.25 physical pixels,
-including fractional scales and inward and outward offsets. The adaptive
-sampler checks several points on each chord; it does not prove an error bound
-for arbitrary geometry.
-
 ## GPU geometry
 
 `WGSL` exports `shape_distance(point, bounds, radii, kind, inset)` and
@@ -86,26 +81,7 @@ for arbitrary geometry.
 squircle profile. Coordinates use the same units as the CPU outline. Use physical
 pixels when evaluating edge coverage.
 
-The build script generates the shader's control points from the CPU constants.
-Each backend supplies its own transforms, colors, batching and clipping.
+The shader uses the same control points as the CPU geometry. Your renderer
+supplies transforms, colors, batching, and clipping.
 
-## Checks
-
-```sh
-cargo fmt --check
-cargo test --release
-cargo clippy --all-targets -- -D warnings
-cargo publish --dry-run
-```
-
-Tests compare distances and edge coverage with an independent sampled-polygon
-reference. They cover mixed radii, fractional coordinates, 1.25× and 1.5× scales,
-small shapes, exact circles and pills, deep insets and the measured join limits.
-The distance checks allow 0.01 units of error for the tested fixtures; edge
-coverage allows two steps out of 255. These are test tolerances, not a proven
-error bound for arbitrary geometry.
-
-See the [changelog](CHANGELOG.md) for version `0.1.0` and the
-[release instructions](RELEASING.md) for publishing the crate with tag `v0.1.0`.
-
-Licensed under MIT.
+[Changelog](CHANGELOG.md) · [MIT license](LICENSE)

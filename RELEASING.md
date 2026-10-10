@@ -14,8 +14,7 @@ cargo publish --dry-run
 ```
 
 The archive is `target/package/ferese-shape-0.1.0.crate`. It includes the Rust
-sources, shader source, build script, tests, README, changelog, release instructions
-and MIT license.
+sources, shader source, build script, tests, README, changelog and MIT license.
 The build script generates the WGSL controls during compilation; no generated
 shader needs to be checked in.
 
@@ -33,10 +32,9 @@ git rev-parse HEAD
 git rev-parse 'v0.1.0^{commit}'
 ```
 
-The two commit IDs must match. The existing `v0.1.0` tag already identifies the
-completed library code. If release preparation adds a commit, reconcile that
-tag before publishing. Updating an existing remote tag requires an explicit
-maintainer decision; the workflow does not move tags.
+The two commit IDs must match. Version `0.1.0` is published. Keep its `v0.1.0`
+tag on the published commit. Further changes need a new version and tag; the
+workflow does not move tags.
 
 ## Publish
 

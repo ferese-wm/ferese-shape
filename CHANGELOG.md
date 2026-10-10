@@ -2,7 +2,7 @@
 
 ## 0.1.0
 
-Initial release of the corner geometry shared by Ferese and its Iced fork.
+Initial release.
 
 - Circular and measured three-cubic continuous corners, with independent radii
   for each corner and circular blending when shoulders would overlap.
@@ -12,7 +12,3 @@ Initial release of the corner geometry shared by Ferese and its Iced fork.
 - WGSL distance and coverage functions generated from the CPU profile constants.
 - Corner-distance searches that skip distant curves using symmetry and
   conservative bounds.
-
-Tests compare geometry against independent references, including mixed radii,
-fractional scales, circles, pills, insets and polygon paths. The README records
-the measured profile's join discontinuities and the test tolerances.
